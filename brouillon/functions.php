@@ -72,10 +72,10 @@ function getUserById($id) {
 }
 
 // récupére le chemin de l'avatar ------------------ qu'on va utiliser pour les photos des annonces
-function getAvatar($id) {
+function getPhoto($id) {
     try {
         $db = connect();
-        $query=$db->prepare('SELECT path FROM avatars WHERE id_user= :id');
+        $query=$db->prepare('SELECT path FROM photos WHERE id_ann= :id');
         $query->execute(['id'=>$id]);
         if ($query->rowCount()){
             $avatars=$query->fetchAll(PDO::FETCH_COLUMN,0);
@@ -88,7 +88,7 @@ function getAvatar($id) {
 }
 
 // enregistre les chemins des avatars
-function addAvatar($id) {
+function addPhoto($id) {
     $cpt=0;
     foreach($_FILES['avatar']['error'] as $k=>$v){
         if(is_uploaded_file($_FILES['avatar']['tmp_name'][$k]) && $v == UPLOAD_ERR_OK) {
@@ -96,8 +96,8 @@ function addAvatar($id) {
             move_uploaded_file($_FILES['avatar']['tmp_name'][$k],$path);
             try{
                 $db=connect();
-                $query = $db->prepare("INSERT INTO avatars( id_user, path) VALUES (:id_user, :path)");
-                $req= $query->execute(['id_user'=>$id,'path'=>$path]);
+                $query = $db->prepare("INSERT INTO photos( id_ann, url) VALUES (:id_ann, :url)");
+                $req= $query->execute(['id_ann'=>$id,'url'=>$url]);
                 if($req) $cpt++;
             } catch (Exception $e) {
                 echo $e->getMessage();
@@ -116,10 +116,10 @@ function addUser() {
                 $token=bin2hex(random_bytes(16));
                 try {
                     $db = connect();
-                    $query=$db->prepare('INSERT INTO utilisateurs (email, nom, mdp, token) VALUES (:email, :nom, :pwd, :token)');
+                    $query=$db->prepare('INSERT INTO utilisateurs (nom, prenom, pseudo, email, tel, code_postal, ville, adresse,mdp, token) VALUES (:nom, :prenom, :pseudo, :email, :tel, :code_postal, :ville, :adresse, :pwd, :token)');
                     $query->execute(['email'=> $email, 'nom'=> $nom , 'pwd'=> $pwd, 'token'=> $token]);
                     if ($query->rowCount()){
-                        $nb=addAvatar($db->lastInsertId());
+                        $nb=addPhoto($db->lastInsertId());
                         $content="<p><a href='localhost/authentification2/?p=activation&t=$token'>Merci de cliquer sur ce lien pour activer votre compte</a></p>";
                         // Pour envoyer un mail HTML, l'en-tête Content-type doit être défini
                         $headers = array(
@@ -128,7 +128,7 @@ function addUser() {
                             'X-Mailer' => 'PHP/' . phpversion()
                         );
                         mail($email,"Veuillez activer votre compte", $content, $headers);
-                        return array("success", "Inscription réussi. Vous avez déjà $nb avatars. Vous allez recevoir un mail pour activer votre compte");
+                        return array("success", "Inscription réussie. Vous avez déjà $nb avatars. Vous allez recevoir un mail pour activer votre compte");
                     }else array("error", "Problème lors de enregistrement");
                 } catch (Exception $e) {
                     return array("error",  $e->getMessage());
